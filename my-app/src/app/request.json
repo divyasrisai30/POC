@@ -1,0 +1,32 @@
+{
+  "requests": [{
+    "request_name": "NDA",
+    "description": "Details of document",
+    "is_sequential": true,
+    "actions": [
+      {
+        "action_type": "SIGN",
+        "recipient_email": "dbojanki@asu.edu",
+        "recipient_name": "Divya Sri Sai Bojanki",
+        "signing_order": 0,
+        "verify_recipient": true,
+        "verification_type": "EMAIL",
+        "private_notes": "To be signed"
+      },
+      {
+        "action_type": "INPERSONSIGN",
+        "recipient_email": "dbojanki@asu.edu",
+        "recipient_name": "Divya Sri Sai Bojanki",
+        "in_person_name": "Divya",
+        "in_person_email": "dbojanki@asu.edu",
+        "signing_order": 1,
+        "verify_recipient": false,
+        "private_notes": "Sign as Inperson"
+      }
+    ],
+    "expiration_days": 10,
+    "email_reminders": true,
+    "reminder_period": 2,
+    "notes": "Note for all recipients"
+  }]
+}
