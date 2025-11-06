@@ -15,68 +15,84 @@ type Recipient = {
   ranges?: string;
 };
 
-export default function New(){
+export default function New() {
 
-        const [file, setFile] = useState<File>();
-        const [uploading, setUploading] = useState(false)
-        const [uploaded , setUploaded] = useState();
-        const [submitting, setSubmitting] = useState(false);
-        const [recipients, setRecipients] = useState<Recipient[]>([{
-          name: "Divya", email: "dbojanki@asu.edu", order: 1, ranges: "1-3"
-        }]);
-        const [requestName, setRequestName] = useState('NDA');
-        const [notes, setNotes] = useState('Note for all recipients');
+  const [file, setFile] = useState<File>();
+  const [submitting, setSubmitting] = useState(false);
+  const [recipients, setRecipients] = useState<Recipient[]>([{
+    name: "Divya", email: "dbojanki@asu.edu", order: 1, ranges: "1-3"
+  }]);
+  const [requestName, setRequestName] = useState('NDA');
+  const [notes, setNotes] = useState('Note for all recipients');
 
-  const handleUpload = async () => {
-  if (!file) return alert("Choose a PDF first.");
-  setUploading(true);
-
-  const fd = new FormData();
-  fd.append("file", file);
-};
+  // Removed incomplete handleUpload function - using handleOnSubmit instead
 
 
-  const addRecipient = () =>{
-    setRecipients((recipients)=>[...recipients, {name: "", email: "", order: recipients.length+1, ranges: ""}])
+  const addRecipient = () => {
+    setRecipients((recipients) => [...recipients, { name: "", email: "", order: recipients.length + 1, ranges: "" }])
   }
-  const removeRecipient = (idx: number) =>{
-    setRecipients(recipients.filter((val, i ) => i!==idx));
+  const removeRecipient = (idx: number) => {
+    setRecipients(recipients.filter((val, i) => i !== idx));
   }
-  const updateRecipient = (idx:number, key:string, value: string | number) =>{
+  const updateRecipient = (idx: number, key: string, value: string | number) => {
     setRecipients(prev =>
-    prev.map((val, i)=>  i===idx?{...val, [key]: value }:val)
+      prev.map((val, i) => i === idx ? { ...val, [key]: value } : val)
     );
 
   }
 
-  const handleOnSubmit = async()=>{
+  const handleOnSubmit = async () => {
     console.log("Submit called");
 
-    //checking for inputs
-       if (!file) {
-      alert('Choose a PDF first.');
+    // Validation
+    if (!file) {
+      alert('Please choose a PDF file first.');
       return;
-      }
-      if (recipients.length === 0) {
-        alert('Add at least one recipient.');
+    }
+
+    if (recipients.length === 0) {
+      alert('Please add at least one recipient.');
+      return;
+    }
+
+    // Validate recipients
+    for (const r of recipients) {
+      if (!r.name || !r.email) {
+        alert('Please fill in name and email for all recipients.');
         return;
       }
-    console.log(recipients);
+      // Basic email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(r.email)) {
+        alert(`Please enter a valid email address for ${r.name || 'recipient'}.`);
+        return;
+      }
+    }
+
+    console.log('Recipients:', recipients);
 
 
     //converting the input to API input request
     const actions = recipients
       .slice()
       .sort((a, b) => a.order - b.order)
-      .map((r) => ({
-        action_type: 'SIGN',
-        recipient_email: r.email,
-        recipient_name: r.name,
-        signing_order: r.order ?? 0,
-        verify_recipient: false,
-        verification_type: 'EMAIL',
-        private_notes: r.ranges ? `Please sign on pages: ${r.ranges}` : 'Please sign',
-      }));
+      .map((r) => {
+        const action: any = {
+          action_type: 'SIGN',
+          recipient_email: r.email,
+          recipient_name: r.name,
+          signing_order: r.order ?? 0,
+          verify_recipient: false,
+          verification_type: 'EMAIL',
+        };
+
+        // // Add page_range if specified (format: "1-3" or "1-3,5" etc.)
+        // if (r.ranges && r.ranges.trim()) {
+        //   action.page_range = r.ranges.trim();
+        // }
+
+        return action;
+      });
 
     const payload = {
       requests: {
@@ -105,42 +121,81 @@ export default function New(){
       });
       //
       const data = await res.json();
-      console.log(data);
+      console.log('Zoho API Response:', data);
+
       if (!res.ok) {
         console.error('Zoho error:', data);
-        alert(data?.error || 'Zoho request failed. Check console.');
+        const errorMsg = data?.error || data?.message || 'Zoho request failed. Check console for details.';
+        alert(`Error: ${errorMsg}\n\nStatus: ${res.status}\n${data?.details ? `Details: ${JSON.stringify(data.details)}` : ''}`);
         return;
       }
-      console.log('Zoho request created:', data);
-      alert('Sent for signature!');
-    } catch (e) {
-      console.error(e);
-      alert('Submit failed. Check console.');
+
+      // Success - show request details
+      const requestId = data?.requests?.request_id || data?.request_id || 'N/A';
+      const requestName = data?.requests?.request_name || 'N/A';
+      alert(`✅ Success! Signature request created.\n\nRequest ID: ${requestId}\nRequest Name: ${requestName}\n\nRecipients will receive an email to sign.`);
+
+      // Optionally reset form or redirect
+      // setFile(undefined);
+      // setRecipients([{ name: "", email: "", order: 1, ranges: "" }]);
+    } catch (e: any) {
+      console.error('Submit error:', e);
+      alert(`Submit failed: ${e?.message || 'Unknown error'}\n\nCheck console for details.`);
     } finally {
       setSubmitting(false);
     }
-    
+
   }
   return (
     <main className="p-6 space-y-6 max-w-4xl mx-auto">
-      <h1>File Upload</h1>
-      <div>
-        <input type="file" onChange={e => setFile(e.target.files?.[0])}/>
-        <button 
-        className="px-3 py-2 border rounded disabled:opacity-60"
-        onClick={handleUpload}>
-        {uploading? "Uploading...": "Upload"}
-        </button>
+      <h1 className="text-2xl font-bold">Create Zoho Sign Request</h1>
+
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-2">Request Name</label>
+          <input
+            type="text"
+            className="w-full border rounded px-3 py-2"
+            placeholder="e.g., NDA, Contract, etc."
+            value={requestName}
+            onChange={(e) => setRequestName(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-2">Notes (for all recipients)</label>
+          <textarea
+            className="w-full border rounded px-3 py-2"
+            placeholder="Optional notes for all recipients"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={3}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-2">PDF Document</label>
+          <input
+            type="file"
+            accept=".pdf"
+            onChange={e => setFile(e.target.files?.[0])}
+            className="block"
+          />
+          {file && <p className="text-sm text-gray-600 mt-1">Selected: {file.name}</p>}
+        </div>
       </div>
 
       <div className="space-y-3">
-        <div className="text-sm font-medium">Recipients & Page Ranges</div>
+        <div>
+          <div className="text-sm font-medium">Recipients & Page Ranges</div>
+          <p className="text-xs text-gray-500 mt-1">Page ranges format: "1-3" or "1-3,5" (leave empty to sign all pages)</p>
+        </div>
         {
-          <div className="grid md:grid-cols-12 gap-2 items-center">
+          <div className="grid md:grid-cols-12 gap-2 items-center font-medium text-sm">
             <div className="md:col-span-3">Name</div>
             <div className="md:col-span-4">Email</div>
-            <div className="md:col-span-3 ">Page Numbers</div>
-            <div className="md:col-span-1 " >Order</div>
+            <div className="md:col-span-3">Page Numbers</div>
+            <div className="md:col-span-1">Order</div>
             <div className="md:col-span-1">Remove</div>
           </div>
         }
@@ -153,10 +208,18 @@ export default function New(){
             <button className="md:col-span-1 text-sm underline" onClick={() => removeRecipient(i)}>Remove</button>
           </div>
         ))}
-        <button className="px-3 py-2 border rounded" onClick={addRecipient}>+ Add Recipient</button>
+        <button className="px-3 py-2 border rounded hover:bg-gray-50" onClick={addRecipient}>+ Add Recipient</button>
 
-        <p>All the recipients are added then only click on Submit</p>
-         <button className="px-3 py-2 border rounded" onClick={handleOnSubmit}>Submit</button>
+        <div className="pt-4 border-t">
+          <button
+            className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={handleOnSubmit}
+            disabled={submitting || !file || recipients.length === 0}
+          >
+            {submitting ? "Submitting..." : "Submit for Signature"}
+          </button>
+          {submitting && <p className="text-sm text-gray-600 mt-2">Creating signature request...</p>}
+        </div>
       </div>
     </main>
   );
