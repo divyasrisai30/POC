@@ -32,9 +32,22 @@ export async function POST(req: Request) {
     if (!dataStr) {
       return NextResponse.json({ error: 'No data payload provided' }, { status: 400 });
     }
-
+    console.log()
 
     // Quick env sanity check
+    if (!process.env.ZOHO_CLIENT_ID ) {
+      return NextResponse.json(
+        {
+          error: "Missing client id",
+          details: {
+            ZOHO_CLIENT_ID: !!process.env.ZOHO_CLIENT_ID,
+            ZOHO_CLIENT_SECRET: !!process.env.ZOHO_CLIENT_SECRET,
+            ZOHO_REFRESH_TOKEN: !!process.env.ZOHO_REFRESH_TOKEN,
+          },
+        },
+        { status: 500 }
+      );
+    }
     if (!process.env.ZOHO_CLIENT_ID || !process.env.ZOHO_CLIENT_SECRET || !process.env.ZOHO_REFRESH_TOKEN) {
       return NextResponse.json(
         {

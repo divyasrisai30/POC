@@ -7,6 +7,8 @@
 
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+
 
 type Recipient = {
   name: string;
@@ -16,6 +18,8 @@ type Recipient = {
 };
 
 export default function New() {
+
+  const router = useRouter();
 
   const [file, setFile] = useState<File>();
   const [submitting, setSubmitting] = useState(false);
@@ -132,6 +136,12 @@ export default function New() {
 
       // Success - show request details
       const requestId = data?.requests?.request_id || data?.request_id || 'N/A';
+      if (!requestId) {
+        alert("Request created but no request_id returned. Check console.");
+        return;
+      }
+      alert(`✅ Request created. Redirecting to status page...`);
+      router.push(`/documents/${requestId}`);
       const requestName = data?.requests?.request_name || 'N/A';
       alert(`✅ Success! Signature request created.\n\nRequest ID: ${requestId}\nRequest Name: ${requestName}\n\nRecipients will receive an email to sign.`);
 
