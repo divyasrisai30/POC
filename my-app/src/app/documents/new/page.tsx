@@ -140,14 +140,12 @@ export default function New() {
         alert("Request created but no request_id returned. Check console.");
         return;
       }
-      alert(`✅ Request created. Redirecting to status page...`);
-      router.push(`/documents/${requestId}`);
-      const requestName = data?.requests?.request_name || 'N/A';
-      alert(`✅ Success! Signature request created.\n\nRequest ID: ${requestId}\nRequest Name: ${requestName}\n\nRecipients will receive an email to sign.`);
+      alert(`✅ Request created.`);
+      // alert(`✅ Request created. Redirecting to status page...`);
+      // router.push(`/documents/${requestId}`);
+      // const requestName = data?.requests?.request_name || 'N/A';
+      // alert(`✅ Success! Signature request created.\n\nRequest ID: ${requestId}\nRequest Name: ${requestName}\n\nRecipients will receive an email to sign.`);
 
-      // Optionally reset form or redirect
-      // setFile(undefined);
-      // setRecipients([{ name: "", email: "", order: 1, ranges: "" }]);
     } catch (e: any) {
       console.error('Submit error:', e);
       alert(`Submit failed: ${e?.message || 'Unknown error'}\n\nCheck console for details.`);
@@ -229,6 +227,7 @@ export default function New() {
             {submitting ? "Submitting..." : "Submit for Signature"}
           </button>
           {submitting && <p className="text-sm text-gray-600 mt-2">Creating signature request...</p>}
+
         </div>
       </div>
     </main>
