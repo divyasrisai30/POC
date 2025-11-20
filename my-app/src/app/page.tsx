@@ -11,7 +11,7 @@ export default function Home() {
          <a  href="./documents/new" >Sign Form</a>
       </div>
       <div>
-        <a href="./template"> Template</a>
+        <a href="./templates"> Template</a>
       </div>
       
     </div>
