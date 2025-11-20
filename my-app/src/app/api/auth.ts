@@ -9,6 +9,9 @@ const CLIENT_ID = process.env.ZOHO_CLIENT_ID;
 const CLIENT_SECRET = process.env.ZOHO_CLIENT_SECRET;
 const REFRESH_TOKEN = process.env.ZOHO_REFRESH_TOKEN;
 
+let cachedToken: string | null = null;
+let tokenExpiry = 0; 
+
 function checkEnvironmetalVariables(){
      // Quick env sanity check
     if (!process.env.ZOHO_CLIENT_ID ) {
@@ -39,8 +42,13 @@ function checkEnvironmetalVariables(){
     }
 }
 
-export async function getZohoAccessToken(): Promise<String>{
+export async function getZohoAccessToken(): Promise<string> {
     checkEnvironmetalVariables();
+
+    const now = Date.now();
+    if (cachedToken && now < tokenExpiry) {
+        return cachedToken;
+    }
 
     const tokenRes = await fetch(`${ACCOUNTS_BASE}/oauth/v2/token`, {
       method: "POST",
@@ -68,12 +76,17 @@ export async function getZohoAccessToken(): Promise<String>{
     );
     }
 
-    const accessToken: string = tokenData.access_token;
-    console.log("accessToken", accessToken);
-    return accessToken;
+    cachedToken= tokenData.access_token as string;
+    console.log("accessToken", cachedToken);
+
+  // access_token is usually 1h; refresh 5 minutes early
+    tokenExpiry = now + 55 * 60 * 1000;
+
+    return cachedToken;
+    // return accessToken;
 }
 
-export async function verifyZohoUser(accessToken: String) {
+export async function verifyZohoUser(accessToken: string) {
     const whoRes = await fetch(`${ACCOUNTS_BASE}/oauth/user/info`, {
       headers: { Authorization: `Zoho-oauthtoken ${accessToken}` }
     });
