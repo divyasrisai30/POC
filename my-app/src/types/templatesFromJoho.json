@@ -1,0 +1,124 @@
+{
+    "code": 0,
+    "templates": {
+        "owner_email": "v**********@***.com",
+        "created_time": 1725289169093,
+        "email_reminders": true,
+        "document_ids": [
+            {
+                "document_name": "Sample Partnership Agreement",
+                "pages": [
+                    {
+                        "page": 0,
+                        "is_thumbnail": true
+                    }
+                ],
+                "document_size": 6029,
+                "document_order": "0",
+                "is_editable": false,
+                "total_pages": 1,
+                "document_id": "14000000000516"
+            }
+        ],
+        "notes": "",
+        "reminder_period": 5,
+        "owner_id": "14000000000511",
+        "document_fields": [
+            {
+                "document_id": "14000000000516",
+                "fields": [
+                    {
+                        "field_id": "14000000007003",
+                        "x_coord": 486,
+                        "field_type_id": "14000000000491",
+                        "abs_height": 13,
+                        "text_property": {
+                            "is_italic": false,
+                            "max_field_length": 2048,
+                            "is_underline": false,
+                            "font_color": "000000",
+                            "is_fixed_width": false,
+                            "font_size": 11,
+                            "is_fixed_height": true,
+                            "is_read_only": false,
+                            "is_bold": false,
+                            "font": "Roboto"
+                        },
+                        "field_category": "textfield",
+                        "field_label": "Job title",
+                        "is_mandatory": true,
+                        "default_value": "",
+                        "page_no": 0,
+                        "document_id": "14000000000516",
+                        "field_name": "Job title",
+                        "y_value": 8.678756,
+                        "abs_width": 98,
+                        "width": 16.01006,
+                        "y_coord": 69,
+                        "field_type_name": "Jobtitle",
+                        "description_tooltip": "",
+                        "x_value": 79.39674,
+                        "height": 1.683938
+                    }
+                ]
+            }
+        ],
+        "description": "",
+        "template_name": "Test template",
+        "modified_time": 1725883497102,
+        "is_deleted": false,
+        "expiration_days": 15,
+        "is_sequential": true,
+        "template_id": "14000000000515",
+        "validity": -1,
+        "request_type_name": "Others",
+        "owner_first_name": "V******",
+        "request_type_id": "14000000000469",
+        "owner_last_name": "",
+        "actions": [
+            {
+                "ishost": false,
+                "verify_recipient": false,
+                "role": "student",
+                "recipient_countrycode_iso": "",
+                "action_type": "SIGN",
+                "private_notes": "",
+                "recipient_email": "",
+                "language": "en",
+                "recipient_phonenumber": "",
+                "action_id": "14000000000542",
+                "signing_order": 1,
+                "fields": [
+                    {
+                        "field_id": "14000000000558",
+                        "x_coord": 138,
+                        "field_type_id": "14000000000475",
+                        "abs_height": 19,
+                        "field_category": "image",
+                        "field_label": "Signature",
+                        "is_mandatory": true,
+                        "page_no": 0,
+                        "document_id": "14000000000516",
+                        "is_draggable": false,
+                        "field_name": "Signature",
+                        "y_value": 17.163212,
+                        "abs_width": 135,
+                        "action_id": "14000000000542",
+                        "width": 22.045263,
+                        "y_coord": 136,
+                        "field_type_name": "Signature",
+                        "description_tooltip": "",
+                        "is_resizable": true,
+                        "x_value": 22.565224,
+                        "height": 2.46114
+                    }
+                ],
+                "recipient_name": "",
+                "delivery_mode": "EMAIL",
+                "recipient_countrycode": ""
+            }
+        ]
+    },
+    "message": "Template has been retrieved",
+    "status": "success"
+}
