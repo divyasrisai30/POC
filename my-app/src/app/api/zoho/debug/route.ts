@@ -3,7 +3,8 @@ import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
-const ACCOUNTS_BASE = process.env.ZOHO_ACCOUNTS_BASE ?? "https://accounts.zoho.com";
+const ACCOUNTS_BASE =
+  process.env.ZOHO_ACCOUNTS_BASE ?? "https://accounts.zoho.com";
 const SIGN_BASE = process.env.ZOHO_SIGN_BASE ?? "https://sign.zoho.com";
 
 export async function GET() {
@@ -11,10 +12,17 @@ export async function GET() {
     timestamp: new Date().toISOString(),
     environment: {
       ZOHO_CLIENT_ID: !!process.env.ZOHO_CLIENT_ID ? "✓ Set" : "✗ Missing",
-      ZOHO_CLIENT_SECRET: !!process.env.ZOHO_CLIENT_SECRET ? "✓ Set" : "✗ Missing",
-      ZOHO_REFRESH_TOKEN: !!process.env.ZOHO_REFRESH_TOKEN ? "✓ Set" : "✗ Missing",
-      ZOHO_ACCOUNTS_BASE: process.env.ZOHO_ACCOUNTS_BASE || "Using default: https://accounts.zoho.com",
-      ZOHO_SIGN_BASE: process.env.ZOHO_SIGN_BASE || "Using default: https://sign.zoho.com",
+      ZOHO_CLIENT_SECRET: !!process.env.ZOHO_CLIENT_SECRET
+        ? "✓ Set"
+        : "✗ Missing",
+      ZOHO_REFRESH_TOKEN: !!process.env.ZOHO_REFRESH_TOKEN
+        ? "✓ Set"
+        : "✗ Missing",
+      ZOHO_ACCOUNTS_BASE:
+        process.env.ZOHO_ACCOUNTS_BASE ||
+        "Using default: https://accounts.zoho.com",
+      ZOHO_SIGN_BASE:
+        process.env.ZOHO_SIGN_BASE || "Using default: https://sign.zoho.com",
     },
     endpoints: {
       accounts_base: ACCOUNTS_BASE,
@@ -24,7 +32,11 @@ export async function GET() {
   };
 
   // Test 1: Check if we can get an access token
-  if (process.env.ZOHO_CLIENT_ID && process.env.ZOHO_CLIENT_SECRET && process.env.ZOHO_REFRESH_TOKEN) {
+  if (
+    process.env.ZOHO_CLIENT_ID &&
+    process.env.ZOHO_CLIENT_SECRET &&
+    process.env.ZOHO_REFRESH_TOKEN
+  ) {
     try {
       const tokenRes = await fetch(`${ACCOUNTS_BASE}/oauth/v2/token`, {
         method: "POST",
@@ -100,7 +112,8 @@ export async function GET() {
             status: selfRes.status,
             success: selfRes.ok,
             email: selfData?.users?.[0]?.email || selfData?.email || null,
-            firstName: selfData?.users?.[0]?.first_name || selfData?.first_name || null,
+            firstName:
+              selfData?.users?.[0]?.first_name || selfData?.first_name || null,
             error: selfData?.message || selfData?.error || null,
             code: selfData?.code || null,
             rawResponse: selfText,
@@ -114,8 +127,8 @@ export async function GET() {
                 "1. Sign up for Zoho Sign at https://sign.zoho.com (if you haven't already)",
                 "2. Ensure the email used for your Zoho API Developer account matches your Zoho Sign account email",
                 "3. Activate your Zoho Sign account by logging in at least once",
-                "4. Note: The API might still work for creating requests even if /users/self fails"
-              ]
+                "4. Note: The API might still work for creating requests even if /users/self fails",
+              ],
             };
           }
         } catch (err: any) {
@@ -137,4 +150,3 @@ export async function GET() {
 
   return NextResponse.json(debugInfo, { status: 200 });
 }
-

@@ -18,11 +18,10 @@ export type TemplateField = {
 
 export type ActionField = {
   field_id: string;
-  field_category?: string; // 'image', 'datefield', 'textfield', etc.
+  field_category?: string;
   field_label?: string;
   page_no?: number;
   is_mandatory?: boolean;
-  // date specifics
   date_format?: string;
   time_zone?: string;
   time_zone_offset?: number;
@@ -49,4 +48,22 @@ export type TemplateDetails = {
   // meta
   owner_email?: string;
   created_time?: number;
+};
+
+type Editable = {
+  template_id: string;
+  template_name?: string;
+  actions?: Array<{
+    action_id: string;
+    action_type?: string;
+    recipient_name?: string;
+    recipient_email?: string;
+    role?: string;
+    verify_recipient?: boolean;
+    verification_type?: string;
+  }>;
+  // optional prefill maps
+  field_text_data?: Record<string, string>;
+  field_boolean_data?: Record<string, boolean>;
+  field_date_data?: Record<string, string>;
 };

@@ -2,11 +2,16 @@ import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
-const ACCOUNTS_BASE = process.env.ZOHO_ACCOUNTS_BASE ?? "https://accounts.zoho.com";
+const ACCOUNTS_BASE =
+  process.env.ZOHO_ACCOUNTS_BASE ?? "https://accounts.zoho.com";
 const SIGN_BASE = process.env.ZOHO_SIGN_BASE ?? "https://sign.zoho.com";
 
-async function getAccessToken() {
-  if (!process.env.ZOHO_CLIENT_ID || !process.env.ZOHO_CLIENT_SECRET || !process.env.ZOHO_REFRESH_TOKEN) {
+export async function getAccessToken() {
+  if (
+    !process.env.ZOHO_CLIENT_ID ||
+    !process.env.ZOHO_CLIENT_SECRET ||
+    !process.env.ZOHO_REFRESH_TOKEN
+  ) {
     throw new Error("Missing Zoho env vars");
   }
 
@@ -23,7 +28,11 @@ async function getAccessToken() {
 
   const text = await tokenRes.text();
   let json: any;
-  try { json = JSON.parse(text); } catch { json = { raw: text }; }
+  try {
+    json = JSON.parse(text);
+  } catch {
+    json = { raw: text };
+  }
 
   if (!tokenRes.ok || !json.access_token) {
     console.error("Zoho token error:", json);
@@ -54,7 +63,11 @@ export async function GET(req: Request) {
 
     const raw = await statusRes.text();
     let data: any;
-    try { data = JSON.parse(raw); } catch { data = { raw }; }
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      data = { raw };
+    }
 
     if (!statusRes.ok) {
       return NextResponse.json(

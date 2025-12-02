@@ -1,0 +1,34 @@
+{
+    "templates": {
+        "field_data": {
+            "field_text_data": {},
+            "field_boolean_data": {},
+            "field_date_data": {},
+            "field_radio_data": {},
+            "field_checkboxgroup_data": {}
+        },
+        "notes": "",
+        "actions": [
+            {
+                "recipient_name": "<Recipient name>",
+                "recipient_email": "<Recipient email>",
+                "action_id": "528290000000045034",
+                "action_type": "SIGN",
+                "signing_order": 1,
+                "role": "User1",
+                "verify_recipient": false,
+                "private_notes": ""
+            },
+            {
+                "recipient_name": "<Recipient name>",
+                "recipient_email": "<Recipient email>",
+                "action_id": "528290000000045040",
+                "action_type": "SIGN",
+                "signing_order": 2,
+                "role": "User2",
+                "verify_recipient": false,
+                "private_notes": ""
+            }
+        ]
+    }
+}

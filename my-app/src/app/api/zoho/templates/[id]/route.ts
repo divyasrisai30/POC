@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { getZohoAccessToken } from "@/app/api/auth";
 
 export async function GET(_req: Request, context: { params: Promise<{ id: string }> }) {
-  const { id } = await context.params;  // ✅ await required by Next.js
+  const { id } = await context.params;  
 
   if (!id) {
     return NextResponse.json({ error: "Missing id" }, { status: 400 });
