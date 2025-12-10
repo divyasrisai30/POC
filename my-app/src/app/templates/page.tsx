@@ -254,7 +254,9 @@ export default function TemplatePage() {
       const result = await res.json().catch(() => ({}));
       console.log("Sent, response:", result);
       alert("Document created and sent (quicksend). Check Zoho dashboard.");
-      // Optionally: reset selection or navigate
+    
+
+
     } catch (e: any) {
       console.error("send error", e);
       alert("Failed to send document: " + (e?.message ?? "Unknown error"));
@@ -435,6 +437,7 @@ export default function TemplatePage() {
           </div>
         )}
       </div>
+      
     </div>
   );
 }

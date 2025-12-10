@@ -159,12 +159,55 @@ export async function POST(req: NextRequest) {
         } bodyPreview=${text.slice(0, 300)}`
       );
 
+      // try {
+      //   const parsedResp = JSON.parse(text);
+      //   return NextResponse.json(parsedResp, { status: zohoResp.status });
+      // } catch {
+      //   return new NextResponse(text, { status: zohoResp.status });
+      // }
+      let parsedResp: any = null;
       try {
-        const parsedResp = JSON.parse(text);
-        return NextResponse.json(parsedResp, { status: zohoResp.status });
+        parsedResp = JSON.parse(text);
       } catch {
-        return new NextResponse(text, { status: zohoResp.status });
+        parsedResp = null;
       }
+
+      // build a best-effort payload to save: prefer parsed.parsedData if available
+      const requestPayload = parsed.parsedData ?? null;
+
+      try {
+        const historyEntry = {
+          template_id: templateId,
+          template_name: parsed.parsedData?.templates?.template_name ?? null,
+          app_id: "app1",
+          user_id: null,
+          timestamp: new Date().toISOString(),
+          zoho_request_id:
+            parsedResp?.request_id ?? parsedResp?.requests?.request_id ?? null,
+          zoho_status:
+            parsedResp?.status ??
+            parsedResp?.requests?.status ??
+            (zohoResp.status ? String(zohoResp.status) : "unknown"),
+          request_payload: requestPayload ?? { raw: parsed.rawText },
+          zoho_response: parsedResp ?? text,
+        };
+
+        console.log("=====working on history======");
+        const finalSaveUrl = "http://localhost:3000/api/zoho/save-sent";
+
+        await fetch(finalSaveUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(historyEntry),
+        });
+      } catch (saveErr) {
+        console.warn("save-sent failed (form-forward):", saveErr);
+      }
+
+      // return Zoho response to client
+      if (parsedResp)
+        return NextResponse.json(parsedResp, { status: zohoResp.status });
+      return new NextResponse(text, { status: zohoResp.status });
     }
 
     // If client already sent a form-encoded `data=...&is_quicksend=true`
@@ -189,11 +232,49 @@ export async function POST(req: NextRequest) {
           zohoResp.status
         } bodyPreview=${text.slice(0, 300)}`
       );
+      let parsedResp: any = null;
       try {
-        return NextResponse.json(JSON.parse(text), { status: zohoResp.status });
+        parsedResp = JSON.parse(text);
       } catch {
-        return new NextResponse(text, { status: zohoResp.status });
+        parsedResp = null;
       }
+
+      // build a best-effort payload to save: prefer parsed.parsedData if available
+      const requestPayload = parsed.parsedData ?? null;
+
+      try {
+        const historyEntry = {
+          template_id: templateId,
+          template_name: parsed.parsedData?.templates?.template_name ?? null,
+          app_id: "app1",
+          user_id: null,
+          timestamp: new Date().toISOString(),
+          zoho_request_id:
+            parsedResp?.request_id ?? parsedResp?.requests?.request_id ?? null,
+          zoho_status:
+            parsedResp?.status ??
+            parsedResp?.requests?.status ??
+            (zohoResp.status ? String(zohoResp.status) : "unknown"),
+          request_payload: requestPayload ?? { raw: parsed.rawText },
+          zoho_response: parsedResp ?? text,
+        };
+
+        console.log("=====working on history======");
+        const finalSaveUrl = "/api/zoho/save-sent";
+
+        await fetch(finalSaveUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(historyEntry),
+        });
+      } catch (saveErr) {
+        console.warn("save-sent failed (form-forward):", saveErr);
+      }
+
+      // return Zoho response to client
+      if (parsedResp)
+        return NextResponse.json(parsedResp, { status: zohoResp.status });
+      return new NextResponse(text, { status: zohoResp.status });
     }
 
     // unsupported content type -> ask client to send JSON
