@@ -8,6 +8,8 @@ import {
   TemplateAction,
   TemplateDetails,
 } from "../../types";
+import TemplateHistory from "./TemplateHistory/page";
+import Link from "next/link";
 
 async function fetchTemplateDetails(
   templateId: string,
@@ -254,9 +256,6 @@ export default function TemplatePage() {
       const result = await res.json().catch(() => ({}));
       console.log("Sent, response:", result);
       alert("Document created and sent (quicksend). Check Zoho dashboard.");
-    
-
-
     } catch (e: any) {
       console.error("send error", e);
       alert("Failed to send document: " + (e?.message ?? "Unknown error"));
@@ -437,7 +436,15 @@ export default function TemplatePage() {
           </div>
         )}
       </div>
-      
+
+      <div>
+        <Link
+          href="/templates/TemplateHistory"
+          className="inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Show Past History of All Documents Created Using Templates
+        </Link>
+      </div>
     </div>
   );
 }
