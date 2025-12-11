@@ -1,3 +1,4 @@
+// app/api/zoho/templates/[id]/createdocument/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { getAccessToken } from "../../../status/route";
 
@@ -15,7 +16,6 @@ type Editable = {
     verify_recipient?: boolean;
     verification_type?: string;
   }>;
-  // optional prefill maps
   field_text_data?: Record<string, string>;
   field_boolean_data?: Record<string, boolean>;
   field_date_data?: Record<string, string>;
@@ -39,7 +39,6 @@ async function parseBody(req: NextRequest) {
     }
     return { type: "form", rawText: text, parsedData, is_quicksend };
   }
-  // fallback: raw text
   const txt = await req.text();
   return { type: "text", rawText: txt };
 }
@@ -72,14 +71,85 @@ function buildZohoPayloadFromEditable(editable: Editable) {
   };
 }
 
+// Build an absolute internal save URL. Prefer env var; fallback to request origin; fallback to localhost.
+function getInternalSaveUrl(req: NextRequest) {
+  const base =
+    process.env.INTERNAL_BASE_URL?.replace(/\/$/, "") ?? req?.nextUrl?.origin;
+  if (!base) {
+    // development fallback
+    return "http://localhost:3000/api/zoho/save-sent";
+  }
+  return `${base}/api/zoho/save-sent`;
+}
+
+// Save historyEntry to internal API. Logs result, swallows errors.
+async function saveHistory(req: NextRequest, historyEntry: any) {
+  const finalSaveUrl = getInternalSaveUrl(req);
+  try {
+    const saveResp = await fetch(finalSaveUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(historyEntry),
+    });
+    const body = await saveResp.text().catch(() => "");
+    console.log(
+      "[save-sent] status=",
+      saveResp.status,
+      "bodyPreview=",
+      body.slice(0, 300)
+    );
+  } catch (err) {
+    console.warn("[save-sent] failed:", err);
+  }
+}
+
+// Build a consistent history entry. Accepts both JSON-branch and form-branch inputs.
+function makeHistoryEntry(params: {
+  template_id: string | null;
+  template_name?: string | null;
+  app_id?: string;
+  user_id?: string | null;
+  parsedResp?: any;
+  zohoRespStatus?: number | null;
+  request_payload?: any;
+  zoho_response?: any;
+}) {
+  const {
+    template_id,
+    template_name = null,
+    app_id = "app1",
+    user_id = null,
+    parsedResp = null,
+    zohoRespStatus = null,
+    request_payload = null,
+    zoho_response = null,
+  } = params;
+
+  return {
+    template_id,
+    template_name,
+    app_id,
+    user_id,
+    timestamp: new Date().toISOString(),
+    zoho_request_id:
+      parsedResp?.request_id ?? parsedResp?.requests?.request_id ?? null,
+    zoho_status:
+      parsedResp?.status ??
+      parsedResp?.requests?.status ??
+      (zohoRespStatus !== null ? String(zohoRespStatus) : "unknown"),
+    request_payload: request_payload ?? null,
+    zoho_response: zoho_response ?? parsedResp ?? null,
+  };
+}
+
+/* ---------- END helpers ---------- */
+
 export async function POST(req: NextRequest) {
   try {
-    // parse body (supports JSON or form-encoded)
     const parsed = await parseBody(req);
 
-    // extract template id reliably from path: /api/zoho/templates/<id>/createdocument
-    const parts = req.nextUrl.pathname.split("/").filter(Boolean); // removes empty segments
-    // parts example: ["api","zoho","templates","<id>","createdocument"]
+    // derive templateId from path
+    const parts = req.nextUrl.pathname.split("/").filter(Boolean);
     const templateIdFromPath =
       parts.length >= 2 ? parts[parts.length - 2] : null;
     const templateId = templateIdFromPath
@@ -105,7 +175,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // If client sent JSON editable object -> build payload server-side
+    /* ---------------- JSON branch ---------------- */
     if (parsed.type === "json") {
       const body = parsed.parsed;
       const editable: Editable | undefined = body?.editable;
@@ -115,10 +185,7 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
-      // ensure template_id present (if not, fallback to path)
-      if (!editable.template_id) {
-        editable.template_id = templateId;
-      }
+      if (!editable.template_id) editable.template_id = templateId;
       if (!editable.template_id) {
         return NextResponse.json(
           { error: "Missing template_id in editable" },
@@ -126,17 +193,11 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // build Zoho payload
       const payload = buildZohoPayloadFromEditable(editable);
-      console.log(
-        "[createDocument] Built payload.preview actions:",
-        (payload.templates.actions || []).map((a: any) => a.action_id)
-      );
       const encoded = `data=${encodeURIComponent(
         JSON.stringify(payload)
       )}&is_quicksend=true`;
 
-      // forward to Zoho
       const zohoResp = await fetch(
         `${ZOHO_BASE}/${encodeURIComponent(
           editable.template_id
@@ -152,19 +213,12 @@ export async function POST(req: NextRequest) {
       );
 
       const text = await zohoResp.text();
-      // log short preview for debug
       console.log(
         `[createDocument] Zoho response status=${
           zohoResp.status
         } bodyPreview=${text.slice(0, 300)}`
       );
 
-      // try {
-      //   const parsedResp = JSON.parse(text);
-      //   return NextResponse.json(parsedResp, { status: zohoResp.status });
-      // } catch {
-      //   return new NextResponse(text, { status: zohoResp.status });
-      // }
       let parsedResp: any = null;
       try {
         parsedResp = JSON.parse(text);
@@ -172,48 +226,26 @@ export async function POST(req: NextRequest) {
         parsedResp = null;
       }
 
-      // build a best-effort payload to save: prefer parsed.parsedData if available
-      const requestPayload = parsed.parsedData ?? null;
+      // build & save history (JSON branch)
+      const historyEntry = makeHistoryEntry({
+        template_id: editable.template_id,
+        template_name: editable.template_name ?? null,
+        parsedResp,
+        zohoRespStatus: zohoResp.status,
+        request_payload: payload,
+        zoho_response: parsedResp ?? text,
+      });
 
-      try {
-        const historyEntry = {
-          template_id: templateId,
-          template_name: parsed.parsedData?.templates?.template_name ?? null,
-          app_id: "app1",
-          user_id: null,
-          timestamp: new Date().toISOString(),
-          zoho_request_id:
-            parsedResp?.request_id ?? parsedResp?.requests?.request_id ?? null,
-          zoho_status:
-            parsedResp?.status ??
-            parsedResp?.requests?.status ??
-            (zohoResp.status ? String(zohoResp.status) : "unknown"),
-          request_payload: requestPayload ?? { raw: parsed.rawText },
-          zoho_response: parsedResp ?? text,
-        };
+      // call save once (helper handles absolute url + errors)
+      await saveHistory(req, historyEntry);
 
-        console.log("=====working on history======");
-        const finalSaveUrl = "http://localhost:3000/api/zoho/save-sent";
-
-        await fetch(finalSaveUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(historyEntry),
-        });
-      } catch (saveErr) {
-        console.warn("save-sent failed (form-forward):", saveErr);
-      }
-
-      // return Zoho response to client
       if (parsedResp)
         return NextResponse.json(parsedResp, { status: zohoResp.status });
       return new NextResponse(text, { status: zohoResp.status });
     }
 
-    // If client already sent a form-encoded `data=...&is_quicksend=true`
+    /* ---------------- form-forward branch ---------------- */
     if (parsed.type === "form" && parsed.rawText) {
-      // you can optionally validate parsedData here
-      // forward the raw text as-is to Zoho using path templateId
       const zohoResp = await fetch(
         `${ZOHO_BASE}/${encodeURIComponent(templateId)}/createdocument`,
         {
@@ -232,6 +264,7 @@ export async function POST(req: NextRequest) {
           zohoResp.status
         } bodyPreview=${text.slice(0, 300)}`
       );
+
       let parsedResp: any = null;
       try {
         parsedResp = JSON.parse(text);
@@ -239,45 +272,23 @@ export async function POST(req: NextRequest) {
         parsedResp = null;
       }
 
-      // build a best-effort payload to save: prefer parsed.parsedData if available
-      const requestPayload = parsed.parsedData ?? null;
+      const historyEntry = makeHistoryEntry({
+        template_id: templateId,
+        template_name: parsed.parsedData?.templates?.template_name ?? null,
+        parsedResp,
+        zohoRespStatus: zohoResp.status,
+        request_payload: parsed.parsedData ?? { raw: parsed.rawText },
+        zoho_response: parsedResp ?? text,
+      });
 
-      try {
-        const historyEntry = {
-          template_id: templateId,
-          template_name: parsed.parsedData?.templates?.template_name ?? null,
-          app_id: "app1",
-          user_id: null,
-          timestamp: new Date().toISOString(),
-          zoho_request_id:
-            parsedResp?.request_id ?? parsedResp?.requests?.request_id ?? null,
-          zoho_status:
-            parsedResp?.status ??
-            parsedResp?.requests?.status ??
-            (zohoResp.status ? String(zohoResp.status) : "unknown"),
-          request_payload: requestPayload ?? { raw: parsed.rawText },
-          zoho_response: parsedResp ?? text,
-        };
+      await saveHistory(req, historyEntry);
 
-        console.log("=====working on history======");
-        const finalSaveUrl = "/api/zoho/save-sent";
-
-        await fetch(finalSaveUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(historyEntry),
-        });
-      } catch (saveErr) {
-        console.warn("save-sent failed (form-forward):", saveErr);
-      }
-
-      // return Zoho response to client
       if (parsedResp)
         return NextResponse.json(parsedResp, { status: zohoResp.status });
       return new NextResponse(text, { status: zohoResp.status });
     }
 
-    // unsupported content type -> ask client to send JSON
+    // unsupported content
     return NextResponse.json(
       {
         error:
