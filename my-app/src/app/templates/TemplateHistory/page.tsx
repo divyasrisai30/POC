@@ -1,4 +1,8 @@
-// components/TemplateHistory.tsx
+/**
+ * HistoryItem, ZohoNormalized
+ * SToring the data as app1.
+ *
+ */
 "use client";
 import React, { useCallback, useEffect, useState } from "react";
 
@@ -51,6 +55,7 @@ export default function TemplateHistory({
     >
   >({});
 
+  //Fetching data
   const loadHistory = useCallback(async () => {
     setLoading(true);
     setErr(null);
@@ -61,6 +66,7 @@ export default function TemplateHistory({
       const res = await fetch(`/api/zoho/history?${q.toString()}`);
       if (!res.ok) throw new Error(`History fetch failed (${res.status})`);
       const json = await res.json();
+      console.log(json.items);
       setItems((json.items ?? []) as HistoryItem[]);
     } catch (e: any) {
       setErr(e?.message ?? "Failed to load history");
@@ -91,6 +97,7 @@ export default function TemplateHistory({
         `/api/zoho/requests/${encodeURIComponent(zohoId)}`
       );
       const json = await res.json().catch(() => null);
+      console.log("History Json data based on id ", json.items);
       if (!res.ok) {
         const msg = json?.error ?? `Zoho returned ${res.status}`;
         setStatusCache((prev) => ({
@@ -223,15 +230,15 @@ export default function TemplateHistory({
                   )} */}
               {/* </div> */}
               {/* {zohoId && (
-                  <a
-                    className="mt-2 inline-block bg-green-600 text-white px-3 py-1 rounded text-sm"
-                    href={`/api/zoho/requests/${encodeURIComponent(
-                      zohoId
-                    )}/download`} // optional: implement download route
-                  >
-                    View
-                  </a>
-                )} */}
+                <a
+                  className="mt-2 inline-block bg-green-600 text-white px-3 py-1 rounded text-sm"
+                  href={`/api/zoho/requests/${encodeURIComponent(
+                    zohoId
+                  )}/download`} // optional: implement download route
+                >
+                  View
+                </a>
+              )} */}
               {/* </div> */}
 
               {/* meta */}
@@ -400,6 +407,12 @@ export default function TemplateHistory({
                                     <div className="mt-1">Signed</div>
                                   </div>
                                 </div>
+
+                                {r.status?.toLowerCase().includes("signed") && (
+                                  <div className="text-xs text-green-600 mt-1">
+                                    Signed successfully
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -408,6 +421,27 @@ export default function TemplateHistory({
                   </div>
                 )}
             </div>
+            {zohoId && live?.overallStatus?.toLowerCase() === "completed" && (
+              <div className="mt-4 flex gap-3">
+                <a
+                  href={`/api/zoho/requests/${encodeURIComponent(
+                    zohoId
+                  )}/documents`}
+                  className="px-3 py-1 border rounded text-sm hover:bg-gray-50"
+                >
+                  View Signed Document
+                </a>
+
+                <a
+                  href={`/api/zoho/requests/${encodeURIComponent(
+                    zohoId
+                  )}/certificate`}
+                  className="px-3 py-1 border rounded text-sm hover:bg-gray-50"
+                >
+                  View Certificate
+                </a>
+              </div>
+            )}
 
             {/* Raw / debug */}
             {/* <details className="mt-4">
